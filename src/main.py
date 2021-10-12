@@ -2,7 +2,28 @@ from telethon import TelegramClient, events
 
 
 async def echo(event: events.NewMessage) -> None:
-    await event.respond(event.text)
+    # TODO: read message then add to gspread
+    """
+    now it can read message like this
+        /report
+        nama : hidayat
+        umur : 17
+    then got like this
+        {
+            "nama" : "hidayat",
+            "umur" : "17",
+        }
+    """
+    text = event.text.split("\n")
+    if text[0] == "/report":
+        await event.respond(event.text)
+        data = {}
+        for col in text[1:]:
+            index = col.index(":")
+            key = col[:index].strip()
+            value = col[index + 1 :].strip()
+            data[key] = value
+        print(data)
 
 
 def main(
