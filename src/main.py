@@ -1,7 +1,20 @@
 from telethon import TelegramClient, events
 
+from .my_module import extract_data, extract_text_report, reply_success
 
-async def echo(event: events.NewMessage) -> None:
+
+def main(
+    SESSION: str, API_ID: int, API_HASH: str, BOT_TOKEN: str, chat_id: int
+) -> None:
+    bot = TelegramClient(SESSION, API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+    bot.add_event_handler(
+        get_report,
+        events.NewMessage(incoming=True, chats=chat_id),
+    )
+    bot.run_until_disconnected()
+
+
+async def get_report(event: events.NewMessage) -> None:
     # TODO: read message then add to gspread
     """
     now it can read message like this
@@ -14,27 +27,15 @@ async def echo(event: events.NewMessage) -> None:
             "umur" : "17",
         }
     """
-    text = event.text.split("\n")
-    if text[0] == "/report":
-        await event.respond(event.text)
-        data = {}
-        for col in text[1:]:
-            index = col.index(":")
-            key = col[:index].strip()
-            value = col[index + 1 :].strip()
-            data[key] = value
-        print(data)
-
-
-def main(
-    SESSION: str, API_ID: int, API_HASH: str, BOT_TOKEN: str, chat_id: int
-) -> None:
-    bot = TelegramClient(SESSION, API_ID, API_HASH).start(bot_token=BOT_TOKEN)
-    bot.add_event_handler(
-        echo,
-        events.NewMessage(
-            incoming=True,
-            chats=chat_id,
-        ),
-    )
-    bot.run_until_disconnected()
+    text, text_is_report, report_has_data = extract_text_report(event)
+    if text_is_report:
+        if report_has_data:
+            try:
+                data = extract_data(text)
+                await reply_success(event, data)
+            except ValueError as e:
+                await event.message.reply(str(e))
+                return None
+            print(data)
+        else:
+            await event.message.reply("Mohon masukkan data.")
