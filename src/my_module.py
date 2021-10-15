@@ -21,12 +21,10 @@ def extract_data(text: List[str]) -> Dict[str, str]:
             raise ValueError("Mohon gunakan format pelaporan.")
         key = col[:index].strip()
         value = col[index + 1 :].strip()
-        data[key] = value
+        data[key.lower()] = value
     return data
 
 
 async def reply_success(event: TelegramClient, data: Dict[str, str]) -> None:
-    text_reply = "Data diterima."
-    for k, v in data.items():
-        text_reply += f"\n{k} = {v}"
+    text_reply = "Success."
     await event.message.reply(text_reply)

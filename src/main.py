@@ -1,6 +1,23 @@
+import gspread
+from gspread.client import Client
+from gspread.models import Worksheet
+from oauth2client.service_account import ServiceAccountCredentials
 from telethon import TelegramClient, events
 
+from .google_spread import update_google_spread
 from .my_module import extract_data, extract_text_report, reply_success
+
+scope = [
+    "https://spreadsheets.google.com/feeds",
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive",
+]
+creds: ServiceAccountCredentials = (
+    ServiceAccountCredentials.from_json_keyfile_name("keys.json")
+)
+client: Client = gspread.authorize(creds)
+sheet: Worksheet = client.open("test_api").sheet1
 
 
 def main(
@@ -15,7 +32,6 @@ def main(
 
 
 async def get_report(event: events.NewMessage) -> None:
-    # TODO: read message then add to gspread
     """
     now it can read message like this
         /report
@@ -32,10 +48,14 @@ async def get_report(event: events.NewMessage) -> None:
         if report_has_data:
             try:
                 data = extract_data(text)
-                await reply_success(event, data)
             except ValueError as e:
                 await event.message.reply(str(e))
                 return None
-            print(data)
+            try:
+                update_google_spread(sheet, data)
+            except ValueError as e:
+                await event.message.reply(str(e))
+                return None
+            await reply_success(event, data)
         else:
             await event.message.reply("Mohon masukkan data.")
